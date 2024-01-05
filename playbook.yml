@@ -1,0 +1,6 @@
+---
+- name: Install and start Nginx on webservers
+  hosts: webservers
+  become: yes
+  roles:
+    - webserver

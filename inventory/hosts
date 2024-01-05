@@ -1,0 +1,15 @@
+[public:vars]
+ansible_connection=local
+
+[public]
+google.com
+github.com
+youtube.com
+
+[webservers]
+127.0.0.101
+127.0.0.102
+
+[webservers:vars]
+project_dir_path=/var/www
+server_name=server_name

@@ -1,0 +1,45 @@
+---
+- name: Update Nginx configuration
+  become: yes
+  template:
+    src: nginx_site_config.j2  # Your Jinja2 template file
+    dest: /etc/nginx/sites-available/default
+  notify:
+    - Restart Nginx
+
+- name: Enable the site (if not already enabled)
+  become: yes
+  command: ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/
+  args:
+    creates: /etc/nginx/sites-enabled/default
+  notify:
+    - Restart Nginx
+
+- name: Remove old Nginx webroot directory
+  ansible.builtin.file:
+    path: /var/www/html  # Replace with the old webroot directory path
+    state: absent
+
+- name: Create Nginx webroot directory
+  ansible.builtin.file:
+    path: "{{ project_dir_path }}"
+    state: directory
+    mode: '0755'
+    owner: www-data
+    group: www-data
+
+- name: Generate random string
+  command: "openssl rand -base64 12"
+  register: random_string_result
+  changed_when: false
+
+- name: Save Random String to a Variable
+  set_fact:
+    random_string: "{{ random_string_result.stdout }}"
+
+- name: Create index.html.j2 template file
+  ansible.builtin.template:
+    src: index.html.j2  # Specify the path to your Jinja2 template file
+    dest: "{{ project_dir_path }}/index.html"
+  notify:
+    - Restart Nginx

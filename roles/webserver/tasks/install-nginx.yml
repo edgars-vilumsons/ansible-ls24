@@ -1,0 +1,7 @@
+---
+- name: Install Nginx
+  become: yes
+  ansible.builtin.shell: apt-get update && apt-get install -y nginx
+
+- name: Start Nginx
+  ansible.builtin.shell: /etc/init.d/nginx start
