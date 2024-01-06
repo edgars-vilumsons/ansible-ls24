@@ -12,3 +12,28 @@
     creates: /etc/nginx/sites-enabled/default
   notify:
     - Restart Nginx
+
+- name: Create directory for Caddyfile
+  ansible.builtin.file:
+    path: "/etc/caddy/"
+    state: directory
+    mode: '0755'
+    owner: caddy
+    group: caddy
+
+- name: Create Caddyfile template
+  template:
+    src: templates/Caddyfile.j2
+    dest: /etc/caddy/Caddyfile
+
+- name: Download Caddy binary
+  ansible.builtin.get_url:
+    url: https://caddyserver.com/api/download?os=linux&arch=amd64
+    dest: /usr/local/bin/caddy
+    mode: '0755'
+
+- name: Start Caddy in the background
+  ansible.builtin.command: /usr/local/bin/caddy run --config /etc/caddy/Caddyfile
+  async: 3600
+  poll: 0
+  become: yes
