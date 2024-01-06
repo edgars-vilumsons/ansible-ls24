@@ -1,0 +1,14 @@
+---
+- name: Update Nginx default configuration to use port 13371
+  lineinfile:
+    path: /etc/nginx/sites-available/default
+    regexp: '^(\s*listen\s*)80;'
+    line: '    listen 13371;'
+
+- name: Enable the site after port change
+  become: yes
+  command: ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/
+  args:
+    creates: /etc/nginx/sites-enabled/default
+  notify:
+    - Restart Nginx
