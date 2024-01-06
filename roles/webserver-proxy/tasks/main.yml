@@ -26,14 +26,49 @@
     src: templates/Caddyfile.j2
     dest: /etc/caddy/Caddyfile
 
+- name: Check if Caddy binary exists
+  stat:
+    path: /usr/local/bin/caddy
+  register: caddy_binary
+
 - name: Download Caddy binary
   ansible.builtin.get_url:
     url: https://caddyserver.com/api/download?os=linux&arch=amd64
     dest: /usr/local/bin/caddy
     mode: '0755'
+  when: not caddy_binary.stat.exists
 
 - name: Start Caddy in the background
   ansible.builtin.command: /usr/local/bin/caddy run --config /etc/caddy/Caddyfile
   async: 3600
   poll: 0
   become: yes
+
+- name: Verify responses from Nginx and Caddy
+  command: "curl http://127.0.0.101:13371"
+  register: nginx_response
+
+- name: Verify responses from Caddy
+  command: "curl http://127.0.0.101"
+  register: caddy_response
+
+- name: Verify Caddy Server header
+  command: "curl --head http://127.0.0.101"
+  register: caddy_server_header
+
+- name: Compare responses
+  assert:
+    that:
+      - "nginx_response.stdout == caddy_response.stdout"
+      - "'Server: Caddy' in caddy_server_header.stdout"
+
+- name: Check Caddy Server header
+  block:
+    - name: Display message when 'Server Caddy' is present
+      debug:
+        msg: "{{ caddy_server_header.stdout }}"
+      when: "'Server: Caddy' in caddy_server_header.stdout"
+    - name: Display message when 'Server Caddy' is not present
+      debug:
+        msg: "'Server: Caddy' is not present in caddy_server_header.stdout"
+      when: "'Server: Caddy' not in caddy_server_header.stdout"
