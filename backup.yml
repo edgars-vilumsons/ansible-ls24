@@ -1,0 +1,44 @@
+---
+- name: Check if the folder exists locally
+  hosts: webservers # Target the control machine
+  # connection: local  # Use a local connection
+  gather_facts: no   # Don't gather facts for the local machine
+  vars:
+    backup_dir_path: "inventory/backups/"
+    host_backup_dir_path: "{{ backup_dir_path }}/{{ inventory_hostname }}/{{ project_dir_path }}/"
+  tasks:
+    - name: Check if the folder exists locally
+      delegate_to: localhost
+      ansible.builtin.find:
+        paths: "{{ host_backup_dir_path }}"
+        recurse: no
+      register: folder_check_result
+
+    - name: Create folder locally if it doesn't exist
+      delegate_to: localhost
+      ansible.builtin.file:
+        path: "{{ host_backup_dir_path }}"
+        state: directory
+      when: folder_check_result.matched == 0
+
+    - name: Check if Git repository is initialized
+      delegate_to: localhost
+      ansible.builtin.stat:
+        path: "{{ backup_dir_path }}/{{ inventory_hostname }}/.git"
+      register: git_check_result
+
+    - name: Initialize Git repository if not initialized
+      delegate_to: localhost
+      command: git init
+      args:
+        chdir: "{{ backup_dir_path }}/{{ inventory_hostname }}"
+      become_user: buddha
+      when: not git_check_result.stat.exists
+
+    - name: Synchronize project folder
+      synchronize:
+        mode: pull
+        src: "{{ project_dir_path }}/"
+        # dest: "inventory/backups/{{ inventory_hostname }}/{{ project_dir_path }}/"
+        dest: "{{ host_backup_dir_path }}"
+      delegate_to: localhost
