@@ -42,3 +42,35 @@
         # dest: "inventory/backups/{{ inventory_hostname }}/{{ project_dir_path }}/"
         dest: "{{ host_backup_dir_path }}"
       delegate_to: localhost
+
+    - name: Add all files to Git
+      delegate_to: localhost
+      command: git add .
+      args:
+        chdir: "{{ backup_dir_path }}/{{ inventory_hostname }}"
+      become_user: buddha
+      when: git_check_result.stat.exists
+
+    - name: Commit changes to Git
+      delegate_to: localhost
+      command: git commit -m "Backup {{ ansible_date_time.iso8601 }}"
+      args:
+        chdir: "{{ backup_dir_path }}/{{ inventory_hostname }}"
+      become_user: buddha
+      when: git_check_result.stat.exists
+
+    - name: Add Remote Origin
+      delegate_to: localhost
+      command: git remote add origin <remote_url>
+      args:
+        chdir: "{{ backup_dir_path }}/{{ inventory_hostname }}"
+      vars:
+        remote_url: "https://github.com/username/repo.git"  # Replace with your remote Git repository URL
+
+    - name: Push to remote Git repository
+      delegate_to: localhost
+      command: git push -u origin master
+      args:
+        chdir: "{{ backup_dir_path }}/{{ inventory_hostname }}"
+      become_user: buddha
+      when: git_check_result.stat.exists
