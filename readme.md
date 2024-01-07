@@ -1,3 +1,5 @@
+[Homework description](ansible-homework.md)
+
 ## Ping All Hosts in "public" Group
 
 ```ansible public -m ping```
@@ -9,8 +11,6 @@
 ## To backup
 
 ```ansible-playbook backup.yml -u root --ask-pass```
-
-[Homework description](ansible-homework.md)
 
 
 
